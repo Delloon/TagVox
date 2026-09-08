@@ -104,7 +104,7 @@ Installer (Visual Studio Build Tools или полная Visual Studio подх�
 ## Сборка
 
 ```bash
-git clone https://github.com/<владелец>/tagvox.git
+git clone https://github.com/delloon/tagvox.git
 cd tagvox
 cargo build --release
 ```
