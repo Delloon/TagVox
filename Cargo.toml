@@ -1,0 +1,25 @@
+[package]
+name = "discord-bot"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+serenity = { version = "0.12", default-features = false, features = [
+    "client",
+    "gateway",
+    "rustls_backend",
+    "model",
+    "voice",
+    "cache",
+] }
+songbird = { version = "0.6", features = ["serenity", "driver"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rand = "0.8"
+strsim = "0.11"
+regex = "1"
+rpassword = "7"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+symphonia = { version = "0.5", features = ["all"] }
