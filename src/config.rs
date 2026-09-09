@@ -24,6 +24,34 @@ pub struct Config {
     /// путь указан без слэшей (просто имя файла).
     #[serde(default = "default_sounds_dir")]
     pub sounds_dir: String,
+
+    /// Глобальные тумблеры функционала бота — переключаются из веб-панели
+    /// (страница «Модули») без перезапуска.
+    #[serde(default)]
+    pub modules: ModulesConfig,
+}
+
+/// Какие модули бота включены. Все по умолчанию включены — выключение
+/// проверяется в обработчике сообщений/команд перед выполнением логики
+/// модуля, само наличие тумблера не требует перезапуска бота.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ModulesConfig {
+    #[serde(default = "default_true")]
+    pub text_reactions: bool,
+    #[serde(default = "default_true")]
+    pub voice_commands: bool,
+    #[serde(default = "default_true")]
+    pub anonymous_messages: bool,
+}
+
+impl Default for ModulesConfig {
+    fn default() -> Self {
+        Self {
+            text_reactions: true,
+            voice_commands: true,
+            anonymous_messages: true,
+        }
+    }
 }
 
 fn default_prefix() -> String {
@@ -46,6 +74,7 @@ impl Default for Config {
             similarity_threshold: default_threshold(),
             require_mention_for_reactions: true,
             sounds_dir: default_sounds_dir(),
+            modules: ModulesConfig::default(),
         }
     }
 }

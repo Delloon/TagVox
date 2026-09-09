@@ -1,14 +1,19 @@
+mod anon;
 mod config;
+mod db;
 mod handler;
+mod panel_config;
+mod password;
 mod phrases;
 mod state;
 mod token_store;
+mod web;
 
 use serenity::prelude::*;
 use songbird::SerenityInit;
-use state::{BaseDirKey, ConfigKey, PhrasesKey, PlaybackStates, ShardManagerKey};
-use std::{collections::HashMap, path::PathBuf, sync::Arc};
-use tokio::sync::Mutex;
+use state::{BaseDirKey, ConfigKey, DbKey, PhrasesKey, PlaybackStates, ShardManagerKey};
+use std::{collections::HashMap, path::PathBuf, sync::Arc, time::Instant};
+use tokio::sync::{Mutex, RwLock};
 
 /// Папка, где лежит сам исполняемый файл. Если по какой-то причине путь
 /// узнать не удалось, используем текущую рабочую директорию как запасной
@@ -34,23 +39,30 @@ async fn main() {
 
     println!("=== Discord бот: реакции по тегу + голосовые команды ===");
 
-    let base_dir = exe_dir();
+    let base_dir = Arc::new(exe_dir());
     println!("Рабочая папка (рядом с exe): {}", base_dir.display());
 
     let config_path = base_dir.join("config.json");
     let token_path = base_dir.join("token.json");
     let phrases_path = base_dir.join("phrases.json");
+    let panel_config_path = base_dir.join("panel.toml");
+    let db_path = base_dir.join("panel.db");
 
-    let config = config::load_or_create(&config_path.to_string_lossy());
+    let config = Arc::new(RwLock::new(config::load_or_create(&config_path.to_string_lossy())));
     let token = token_store::load_or_prompt(&token_path.to_string_lossy());
-    let phrases = phrases::load(&phrases_path.to_string_lossy());
+    let phrases = Arc::new(RwLock::new(phrases::load(&phrases_path.to_string_lossy())));
+    let panel_cfg = panel_config::load_or_create(&panel_config_path.to_string_lossy());
 
-    println!("Текстовых реакций загружено: {}", phrases.text_reactions.len());
-    println!("Голосовых команд загружено: {}", phrases.voice_commands.len());
-    println!(
-        "Порог похожести фраз: {} (правь в config.json)",
-        config.similarity_threshold
-    );
+    {
+        let config_guard = config.read().await;
+        let phrases_guard = phrases.read().await;
+        println!("Текстовых реакций загружено: {}", phrases_guard.text_reactions.len());
+        println!("Голосовых команд загружено: {}", phrases_guard.voice_commands.len());
+        println!(
+            "Порог похожести фраз: {} (правь в config.json)",
+            config_guard.similarity_threshold
+        );
+    }
 
     let intents = GatewayIntents::GUILD_MESSAGES
         | GatewayIntents::MESSAGE_CONTENT
@@ -63,13 +75,29 @@ async fn main() {
         .await
         .expect("Ошибка создания клиента. Проверь, что токен корректный.");
 
+    // БД инициализируем всегда (не только если включена панель) — она нужна
+    // и /anon (роли, кулдаун, псевдонимы), и веб-панели, если та включена.
+    let db_pool = match db::init(&db_path).await {
+        Ok(pool) => Some(pool),
+        Err(e) => {
+            eprintln!(
+                "[БД] Не удалось открыть {}: {e:?}. Веб-панель и /anon будут недоступны.",
+                db_path.display()
+            );
+            None
+        }
+    };
+
+    let playback_states = Arc::new(Mutex::new(HashMap::new()));
+
     {
         let mut data = client.data.write().await;
-        data.insert::<ConfigKey>(Arc::new(config));
-        data.insert::<PhrasesKey>(Arc::new(phrases));
-        data.insert::<BaseDirKey>(Arc::new(base_dir));
+        data.insert::<ConfigKey>(config.clone());
+        data.insert::<PhrasesKey>(phrases.clone());
+        data.insert::<BaseDirKey>(base_dir.clone());
         data.insert::<ShardManagerKey>(client.shard_manager.clone());
-        data.insert::<PlaybackStates>(Arc::new(Mutex::new(HashMap::new())));
+        data.insert::<PlaybackStates>(playback_states.clone());
+        data.insert::<DbKey>(db_pool.clone());
     }
 
     // Фоновая задача: каждые 30 секунд печатает в консоль текущий пинг
@@ -95,6 +123,56 @@ async fn main() {
                 }
             }
         });
+    }
+
+    // --- Веб-панель (опционально, см. panel.toml -> enabled) -----------------
+    if !panel_cfg.enabled {
+        println!("[ПАНЕЛЬ] Отключена в panel.toml (enabled = false).");
+    } else if let Some(pool) = db_pool.clone() {
+        let web_dir = base_dir.join("web");
+        if !web_dir.exists() {
+            eprintln!(
+                "[ПАНЕЛЬ] Папка {} не найдена — веб-панель запущена не будет. \
+                 Скопируй туда содержимое web/ из репозитория.",
+                web_dir.display()
+            );
+        } else {
+            let app_state = web::AppState {
+                shard_manager: client.shard_manager.clone(),
+                playback_states: playback_states.clone(),
+                cache: client.cache.clone(),
+                start_time: Instant::now(),
+                db: pool,
+                base_dir: base_dir.clone(),
+                oauth: Arc::new(panel_cfg.discord_oauth.clone()),
+                initial_admin_discord_id: Arc::new(panel_cfg.initial_admin_discord_id.clone()),
+                auth_mode: panel_cfg.auth_mode,
+                password_hash: Arc::new(panel_cfg.password_hash.clone()),
+                oauth_states: Arc::new(Mutex::new(HashMap::new())),
+                config: config.clone(),
+                phrases: phrases.clone(),
+                config_path: config_path.clone(),
+                phrases_path: phrases_path.clone(),
+            };
+            let router = web::build_router(app_state, web_dir);
+            let addr = format!("{}:{}", panel_cfg.host, panel_cfg.port);
+
+            match tokio::net::TcpListener::bind(&addr).await {
+                Ok(listener) => {
+                    println!("[ПАНЕЛЬ] Веб-панель слушает на http://{addr}");
+                    tokio::spawn(async move {
+                        if let Err(e) = axum::serve(listener, router).await {
+                            eprintln!("[ПАНЕЛЬ] Веб-сервер завершился с ошибкой: {e:?}");
+                        }
+                    });
+                }
+                Err(e) => {
+                    eprintln!("[ПАНЕЛЬ] Не удалось занять адрес {addr}: {e}. Панель не запущена.");
+                }
+            }
+        }
+    } else {
+        eprintln!("[ПАНЕЛЬ] БД недоступна — панель не запущена.");
     }
 
     println!("Подключаюсь к Discord...");

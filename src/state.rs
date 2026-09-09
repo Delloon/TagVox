@@ -2,11 +2,14 @@ use crate::{config::Config, phrases::Phrases};
 use serenity::{model::id::GuildId, prelude::TypeMapKey};
 use songbird::tracks::TrackHandle;
 use std::{collections::HashMap, path::PathBuf, sync::Arc};
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, RwLock};
 
+/// Config хранится за RwLock, а не просто за Arc — веб-панель может менять
+/// настройки на лету, и обработчик Discord-сообщений должен видеть
+/// изменения без перезапуска бота.
 pub struct ConfigKey;
 impl TypeMapKey for ConfigKey {
-    type Value = Arc<Config>;
+    type Value = Arc<RwLock<Config>>;
 }
 
 /// Папка, где лежит сам исполняемый файл. Все относительные пути к
@@ -18,9 +21,10 @@ impl TypeMapKey for BaseDirKey {
     type Value = Arc<PathBuf>;
 }
 
+/// То же самое для фраз/голосовых команд.
 pub struct PhrasesKey;
 impl TypeMapKey for PhrasesKey {
-    type Value = Arc<Phrases>;
+    type Value = Arc<RwLock<Phrases>>;
 }
 
 /// Доступ к менеджеру шардов — через него можно узнать текущий пинг
@@ -41,4 +45,12 @@ pub struct GuildPlayback {
 pub struct PlaybackStates;
 impl TypeMapKey for PlaybackStates {
     type Value = Arc<Mutex<HashMap<GuildId, GuildPlayback>>>;
+}
+
+/// Пул SQLite. `None`, если БД не удалось открыть — тогда модуль
+/// анонимных сообщений (и веб-панель) недоступны, но остальной бот
+/// продолжает работать.
+pub struct DbKey;
+impl TypeMapKey for DbKey {
+    type Value = Option<sqlx::SqlitePool>;
 }

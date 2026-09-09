@@ -1,4 +1,5 @@
 use crate::{
+    anon,
     phrases::{self, VoiceCommand},
     state::{BaseDirKey, ConfigKey, GuildPlayback, PhrasesKey, PlaybackStates, ShardManagerKey},
 };
@@ -13,6 +14,7 @@ use serenity::{
     model::{
         channel::Message,
         gateway::Ready,
+        guild::Guild,
         id::{ChannelId, GuildId},
         voice::VoiceState,
     },
@@ -34,6 +36,22 @@ impl EventHandler for Handler {
         println!("Бот запущен как {}", ready.user.name);
     }
 
+    /// Срабатывает один раз после того, как кэш заполнился списком серверов —
+    /// самое надёжное место, чтобы зарегистрировать /anon сразу для всех.
+    async fn cache_ready(&self, ctx: Context, guilds: Vec<GuildId>) {
+        for guild_id in &guilds {
+            anon::register_for_guild(&ctx, *guild_id).await;
+        }
+        println!("Слэш-команды зарегистрированы для {} сервер(ов).", guilds.len());
+    }
+
+    /// Срабатывает и когда бот только что зашёл на новый сервер, и когда
+    /// сервер снова стал доступен после разрыва соединения — set_commands
+    /// внутри register_for_guild идемпотентен, повторные вызовы не страшны.
+    async fn guild_create(&self, ctx: Context, guild: Guild, _is_new: Option<bool>) {
+        anon::register_for_guild(&ctx, guild.id).await;
+    }
+
     async fn message(&self, ctx: Context, msg: Message) {
         if msg.author.bot {
             return;
@@ -41,10 +59,12 @@ impl EventHandler for Handler {
 
         let (config, phrases) = {
             let data = ctx.data.read().await;
-            (
-                data.get::<ConfigKey>().unwrap().clone(),
-                data.get::<PhrasesKey>().unwrap().clone(),
-            )
+            let config_lock = data.get::<ConfigKey>().unwrap().clone();
+            let phrases_lock = data.get::<PhrasesKey>().unwrap().clone();
+            drop(data);
+            let config = config_lock.read().await.clone();
+            let phrases = phrases_lock.read().await.clone();
+            (config, phrases)
         };
 
         let content = msg.content.trim().to_string();
@@ -70,20 +90,24 @@ impl EventHandler for Handler {
             return;
         }
 
-        if let Some(vc) = phrases::best_voice_command(&clean_text, &phrases, config.similarity_threshold)
-        {
-            play_or_resume(&ctx, &msg, vc).await;
-            return;
+        if config.modules.voice_commands {
+            if let Some(vc) = phrases::best_voice_command(&clean_text, &phrases, config.similarity_threshold)
+            {
+                play_or_resume(&ctx, &msg, vc).await;
+                return;
+            }
         }
 
-        if let Some(tr) =
-            phrases::best_text_reaction(&clean_text, &phrases, config.similarity_threshold)
-        {
-            let reply = tr.responses.choose(&mut rand::thread_rng()).cloned();
-            if let Some(reply) = reply {
-                let _ = msg.channel_id.say(&ctx.http, reply).await;
+        if config.modules.text_reactions {
+            if let Some(tr) =
+                phrases::best_text_reaction(&clean_text, &phrases, config.similarity_threshold)
+            {
+                let reply = tr.responses.choose(&mut rand::thread_rng()).cloned();
+                if let Some(reply) = reply {
+                    let _ = msg.channel_id.say(&ctx.http, reply).await;
+                }
+                return;
             }
-            return;
         }
 
         let reply = phrases.unknown_response.choose(&mut rand::thread_rng()).cloned();
@@ -92,10 +116,13 @@ impl EventHandler for Handler {
         }
     }
 
-    /// Обрабатывает клики по кнопкам Пауза/Продолжить/Стоп под сообщениями бота.
+    /// Обрабатывает клики по кнопкам Пауза/Продолжить/Стоп под сообщениями
+    /// бота, а также вызовы слэш-команд (/anon).
     async fn interaction_create(&self, ctx: Context, interaction: Interaction) {
-        if let Interaction::Component(component) = interaction {
-            handle_voice_button(&ctx, &component).await;
+        match interaction {
+            Interaction::Component(component) => handle_voice_button(&ctx, &component).await,
+            Interaction::Command(command) => anon::handle(&ctx, &command).await,
+            _ => {}
         }
     }
 }
@@ -386,8 +413,10 @@ async fn play_or_resume(ctx: &Context, msg: &Message, vc: &VoiceCommand) {
 
     let file_path: PathBuf = {
         let data = ctx.data.read().await;
-        let config = data.get::<ConfigKey>().unwrap().clone();
+        let config_lock = data.get::<ConfigKey>().unwrap().clone();
         let base_dir = data.get::<BaseDirKey>().unwrap().clone();
+        drop(data);
+        let config = config_lock.read().await.clone();
         let raw = Path::new(&vc.file);
         if raw.is_absolute() {
             // Полный путь (например C:\music\track.mp3 или /home/user/track.mp3) — используем как есть

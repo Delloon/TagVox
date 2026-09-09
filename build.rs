@@ -82,10 +82,18 @@ fn main() {
         copy_dir_if_missing(&sounds_src, &target_dir.join("sounds"));
     }
 
+    // Статика веб-панели (index.html, css/, js/) — нужна рядом с exe, чтобы
+    // Axum мог раздавать её напрямую с диска
+    let web_src = manifest_dir.join("web");
+    if web_src.exists() {
+        copy_dir_if_missing(&web_src, &target_dir.join("web"));
+    }
+
     // Перезапускать этот build-скрипт нужно только если сами исходники
     // настроек изменились — иначе обычная пересборка кода будет лишний раз
     // трогать файловую систему без необходимости.
     println!("cargo:rerun-if-changed=phrases.json");
     println!("cargo:rerun-if-changed=config.json");
     println!("cargo:rerun-if-changed=sounds");
+    println!("cargo:rerun-if-changed=web");
 }

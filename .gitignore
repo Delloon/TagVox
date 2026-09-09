@@ -2,20 +2,24 @@
 /target/
 /dist/
 
-
+ 
 # Секреты и локальные настройки — не должны попадать в репозиторий
 token.json
 config.json
-
+panel.toml
+panel.db
+panel.db-shm
+panel.db-wal
+ 
 # Логи и отладочные файлы
 *.log
 *.pdb
-
+ 
 # IDE / редакторы
 .vscode/
 .idea/
 *.swp
-
+ 
 # ОС-специфичные файлы
 .DS_Store
 Thumbs.db

@@ -1,0 +1,1029 @@
+/* =========================================================================
+   TagVox control panel — design tokens
+   Тема: консоль вещательной студии. Один акцент (янтарь) для первичных
+   действий, красный — только для деструктивных/стоп-состояний, зелёный —
+   только для статуса «онлайн». Моноширинный шрифт — только для настоящих
+   технических значений (пинг, размер файла, id), не для украшения.
+   ========================================================================= */
+
+:root {
+  /* Цвет */
+  --bg: #14171c;
+  --bg-elevated: #1c2028;
+  --bg-inset: #101317;
+  --border: #2a2f3a;
+  --border-strong: #3a4150;
+
+  --text: #e8e6e1;
+  --text-dim: #8b93a1;
+  --text-faint: #5b6472;
+
+  --accent: #e8a33d;
+  --accent-dim: #b9812f;
+  --accent-contrast: #14171c;
+
+  --danger: #e2574c;
+  --danger-dim: #b8453c;
+
+  --ok: #4caf7d;
+  --ok-dim: #3a8a63;
+
+  /* Типографика */
+  --font-ui: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* Форма */
+  --radius: 6px;
+  --radius-lg: 10px;
+
+  /* Тайминг */
+  --ease: cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Атрибут `hidden` должен побеждать любые display-правила компонентов —
+   иначе .login-screen { display: flex } / .app { display: grid } тихо
+   игнорируют hidden, и элемент остаётся видимым несмотря на скрытие в JS. */
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+a {
+  color: var(--accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+h1, h2, h3, p {
+  margin: 0;
+}
+
+/* -------------------------------------------------------------------------
+   Экран входа
+   ------------------------------------------------------------------------- */
+
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 360px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+}
+
+.login-mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.login-mark .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(232, 163, 61, 0.18);
+}
+
+.login-mark span {
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.01em;
+}
+
+.login-card h1 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.login-card p.hint {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+.field label {
+  display: block;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.field input[type="text"],
+.field input[type="password"],
+.field input[type="number"],
+.field select {
+  width: 100%;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 9px 11px;
+  color: var(--text);
+  transition: border-color 0.15s var(--ease);
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.field .error-text {
+  color: var(--danger);
+  font-size: 12.5px;
+  margin-top: 6px;
+  display: none;
+}
+
+.field.has-error .error-text {
+  display: block;
+}
+
+.field.has-error input {
+  border-color: var(--danger);
+}
+
+/* -------------------------------------------------------------------------
+   Кнопки
+   ------------------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--border-strong);
+  background: var(--bg-elevated);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease), transform 0.1s var(--ease);
+}
+
+.btn:hover {
+  border-color: var(--text-faint);
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: var(--accent-dim);
+  border-color: var(--accent-dim);
+}
+
+.btn-danger {
+  background: transparent;
+  border-color: var(--danger-dim);
+  color: var(--danger);
+}
+
+.btn-danger:hover {
+  background: rgba(226, 87, 76, 0.1);
+  border-color: var(--danger);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-dim);
+}
+
+.btn-ghost:hover {
+  background: var(--bg-elevated);
+  color: var(--text);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 12.5px;
+}
+
+/* -------------------------------------------------------------------------
+   Приложение: сайдбар + основная область
+   ------------------------------------------------------------------------- */
+
+.app {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100vh;
+}
+
+.sidebar {
+  background: var(--bg-elevated);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 14px;
+}
+
+.sidebar-mark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px 20px;
+}
+
+.sidebar-mark .dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.sidebar-mark span {
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: var(--radius);
+  color: var(--text-dim);
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  text-align: left;
+  width: 100%;
+}
+
+.nav-item:hover {
+  background: var(--bg-inset);
+  color: var(--text);
+}
+
+.nav-item.active {
+  background: var(--bg-inset);
+  border-color: var(--border);
+  color: var(--accent);
+}
+
+.nav-item svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.sidebar-footer {
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  margin-top: 14px;
+}
+
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  padding: 6px 10px;
+}
+
+.status-pill .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-faint);
+}
+
+.status-pill.online .dot {
+  background: var(--ok);
+  box-shadow: 0 0 0 3px rgba(76, 175, 125, 0.15);
+}
+
+.status-pill.offline .dot {
+  background: var(--danger);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 32px;
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar h1 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.topbar .subtitle {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin-top: 3px;
+}
+
+.view-root {
+  padding: 28px 32px 60px;
+  max-width: 880px;
+  width: 100%;
+}
+
+/* -------------------------------------------------------------------------
+   Панели / карточки
+   ------------------------------------------------------------------------- */
+
+.panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 12px;
+}
+
+.panel-header h2 {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.panel-header .desc {
+  color: var(--text-dim);
+  font-size: 12.5px;
+  margin-top: 4px;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.stat-card {
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.stat-card .label {
+  color: var(--text-dim);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.stat-card .value {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.stat-card .value.ok {
+  color: var(--ok);
+}
+
+.stat-card .value.danger {
+  color: var(--danger);
+}
+
+/* -------------------------------------------------------------------------
+   Формы
+   ------------------------------------------------------------------------- */
+
+.form-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.form-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.form-row:first-child {
+  padding-top: 0;
+}
+
+.form-row-label {
+  flex: 0 0 auto;
+  max-width: 260px;
+}
+
+.form-row-label .name {
+  font-size: 13.5px;
+  font-weight: 500;
+}
+
+.form-row-label .desc {
+  color: var(--text-dim);
+  font-size: 12px;
+  margin-top: 3px;
+}
+
+.form-row-control {
+  flex: 1;
+  max-width: 280px;
+}
+
+.form-row-control input[type="text"],
+.form-row-control input[type="number"] {
+  width: 100%;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  color: var(--text);
+}
+
+.form-row-control input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+/* Переключатель */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle .track {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-inset);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+
+.toggle .track::before {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  left: 2px;
+  top: 2px;
+  background: var(--text-dim);
+  border-radius: 50%;
+  transition: transform 0.15s var(--ease), background 0.15s var(--ease);
+}
+
+.toggle input:checked + .track {
+  background: rgba(232, 163, 61, 0.15);
+  border-color: var(--accent);
+}
+
+.toggle input:checked + .track::before {
+  transform: translateX(18px);
+  background: var(--accent);
+}
+
+/* Слайдер */
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.slider-row input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.slider-row .slider-value {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--accent);
+  min-width: 36px;
+  text-align: right;
+}
+
+/* -------------------------------------------------------------------------
+   Чипы (триггеры / фразы)
+   ------------------------------------------------------------------------- */
+
+.chip-field label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+
+.chip-input {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  min-height: 42px;
+}
+
+.chip-input:focus-within {
+  border-color: var(--accent);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 6px 4px 12px;
+  font-size: 12.5px;
+}
+
+.chip button {
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  line-height: 1;
+  padding: 0;
+}
+
+.chip button:hover {
+  background: rgba(226, 87, 76, 0.15);
+  color: var(--danger);
+}
+
+.chip-input input {
+  flex: 1;
+  min-width: 120px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  padding: 4px 6px;
+}
+
+.chip-input input:focus {
+  outline: none;
+}
+
+.chip-hint {
+  font-size: 11.5px;
+  color: var(--text-faint);
+  margin-top: 6px;
+}
+
+/* -------------------------------------------------------------------------
+   Списки записей (реакции / голосовые команды)
+   ------------------------------------------------------------------------- */
+
+.entry-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.entry-card {
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+
+.entry-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.entry-id {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
+.entry-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.entry-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.entry-voice-file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.entry-voice-file select,
+.entry-voice-file input {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+}
+
+/* -------------------------------------------------------------------------
+   Загрузка звуков
+   ------------------------------------------------------------------------- */
+
+.dropzone {
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  text-align: center;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
+}
+
+.dropzone:hover,
+.dropzone.dragover {
+  border-color: var(--accent);
+  background: rgba(232, 163, 61, 0.04);
+}
+
+.dropzone .title {
+  color: var(--text);
+  font-weight: 500;
+  font-size: 13.5px;
+  margin-bottom: 4px;
+}
+
+.dropzone .sub {
+  font-size: 12px;
+}
+
+.dropzone input[type="file"] {
+  display: none;
+}
+
+.sound-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: 16px;
+}
+
+.sound-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.sound-row:last-child {
+  border-bottom: none;
+}
+
+.sound-row .name {
+  flex: 1;
+  font-size: 13.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sound-row .size {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-dim);
+  min-width: 64px;
+  text-align: right;
+}
+
+.sound-row audio {
+  height: 30px;
+  max-width: 200px;
+}
+
+.upload-progress {
+  margin-top: 12px;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+
+.upload-progress .filename {
+  font-size: 12.5px;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.upload-progress .bar-track {
+  height: 4px;
+  background: var(--bg);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.upload-progress .bar-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 0%;
+  transition: width 0.1s linear;
+}
+
+/* -------------------------------------------------------------------------
+   Анонимные сообщения: select-поля и список ролей
+   ------------------------------------------------------------------------- */
+
+.anon-select {
+  width: 100%;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  color: var(--text);
+}
+
+.anon-select:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+#anon-cooldown {
+  width: 100%;
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  color: var(--text);
+}
+
+.anon-role-list {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px 10px;
+  background: var(--bg-inset);
+}
+
+.anon-role-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  font-size: 13.5px;
+  border-bottom: 1px solid var(--border);
+}
+
+.anon-role-row:last-child {
+  border-bottom: none;
+}
+
+/* -------------------------------------------------------------------------
+   Пустые/ошибочные состояния
+   ------------------------------------------------------------------------- */
+
+.state-block {
+  text-align: left;
+  padding: 28px 20px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--text-dim);
+}
+
+.state-block .title {
+  color: var(--text);
+  font-weight: 500;
+  font-size: 13.5px;
+  margin-bottom: 6px;
+}
+
+.state-block.state-error {
+  border-color: rgba(226, 87, 76, 0.35);
+}
+
+.state-block.state-error .title {
+  color: var(--danger);
+}
+
+.state-block .action {
+  margin-top: 12px;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-inset) 25%, var(--bg-elevated) 37%, var(--bg-inset) 63%);
+  background-size: 400% 100%;
+  animation: skeleton-loading 1.4s ease infinite;
+  border-radius: var(--radius);
+  height: 16px;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+/* -------------------------------------------------------------------------
+   Toasts
+   ------------------------------------------------------------------------- */
+
+.toast-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 100;
+}
+
+.toast {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  font-size: 13px;
+  min-width: 240px;
+  max-width: 340px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  animation: toast-in 0.18s var(--ease);
+}
+
+.toast.toast-error {
+  border-left-color: var(--danger);
+}
+
+.toast.toast-success {
+  border-left-color: var(--ok);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Адаптив
+   ------------------------------------------------------------------------- */
+
+@media (max-width: 760px) {
+  .app {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 14px;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+
+  .sidebar-mark {
+    padding: 4px 12px 4px 4px;
+  }
+
+  .nav {
+    flex-direction: row;
+  }
+
+  .sidebar-footer {
+    display: none;
+  }
+
+  .view-root {
+    padding: 20px 16px 40px;
+  }
+
+  .topbar {
+    padding: 16px 16px;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .form-row-control {
+    max-width: none;
+    width: 100%;
+  }
+}

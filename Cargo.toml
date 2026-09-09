@@ -13,7 +13,7 @@ serenity = { version = "0.12", default-features = false, features = [
     "cache",
 ] }
 songbird = { version = "0.6", features = ["serenity", "driver"] }
-tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "signal", "fs"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 rand = "0.8"
@@ -23,3 +23,20 @@ rpassword = "7"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 symphonia = { version = "0.5", features = ["all"] }
+
+# --- Веб-панель ---
+axum = { version = "0.8", features = ["multipart"] }
+tower-http = { version = "0.6", features = ["fs", "cors", "trace"] }
+sqlx = { version = "0.8", default-features = false, features = [
+    "sqlite",
+    "runtime-tokio-rustls",
+    "migrate",
+    "macros",
+] }
+anyhow = "1"
+thiserror = "1"
+toml = "0.8"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+urlencoding = "2"
+argon2 = "0.5"
+chrono = "0.4"

@@ -1,9 +1,9 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::fs;
 
 /// Текстовая реакция: набор похожих фраз-триггеров и набор ответов, из
 /// которых бот выбирает случайный.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TextReaction {
     pub id: String,
     pub triggers: Vec<String>,
@@ -12,14 +12,14 @@ pub struct TextReaction {
 
 /// Голосовая команда: набор похожих фраз-триггеров и локальный путь к
 /// звуковому файлу, который нужно проиграть.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VoiceCommand {
     pub id: String,
     pub triggers: Vec<String>,
     pub file: String,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Phrases {
     #[serde(default)]
     pub text_reactions: Vec<TextReaction>,
