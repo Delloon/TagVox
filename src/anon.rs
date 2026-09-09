@@ -82,7 +82,9 @@ pub async fn handle(ctx: &Context, command: &CommandInteraction) {
         let data = ctx.data.read().await;
         let config_lock = data.get::<ConfigKey>().unwrap().clone();
         drop(data);
-        config_lock.read().await.modules.anonymous_messages
+
+        let config = config_lock.read().await;
+        config.modules.anonymous_messages
     };
     if !module_enabled {
         reply_ephemeral(ctx, command, "Анонимные сообщения сейчас отключены администратором бота.").await;
